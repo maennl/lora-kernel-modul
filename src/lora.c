@@ -6,10 +6,12 @@
 #include <linux/module.h>
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
+#include <linux/interrupt.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Marcel Schmidt <msc@maennl.info>");
 MODULE_DESCRIPTION("LoRa SPI module");
+MODULE_VERSION("0.1");
 
 #define RH_SPI_WRITE_MASK 0x80
 #define LONG_RANGE_MODE_LORA 0x80
@@ -26,9 +28,14 @@ MODULE_DESCRIPTION("LoRa SPI module");
 #define CAD_MODE 0x07
 
 static struct spi_device *spi_device;
-static int SPI_LORA_BUS_NUM = 0;
-module_param(SPI_LORA_BUS_NUM,int, 0000);
-MODULE_PARM_DESC(SPI_LORA_BUS_NUM,"SPI Busnummer für LoRa-Modul");
+static unsigned int SPI_LORA_BUS_NUM = 0;
+static unsigned int RST_PIN = 6;
+static unsigned int DI0_PIN = 17;
+static unsigned int irqNumber;
+
+
+module_param(SPI_LORA_BUS_NUM, int, 0000);
+MODULE_PARM_DESC(SPI_LORA_BUS_NUM, "SPI Busnummer für LoRa-Modul");
 
 
 static void lora_read_register(unsigned char ch, unsigned char *rxBuffer, unsigned int rxBuffernLen) {
@@ -66,12 +73,19 @@ static unsigned char lora_get_bytes_received(void) {
     return rx;
 }
 
+static irq_handler_t lora_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs) {
+    // the actions that the interrupt should perform
+    printk("Interrupt!");
+
+   return (irq_handler_t) IRQ_HANDLED;
+}
 
 static int __init spi_init(void) {
     int ret;
     unsigned char ch = 0x1F;
     unsigned char rx[2] = {0xFF, 0x00};
     struct spi_master *master;
+    int result = 0;
 
     //Register information about your slave device:
     struct spi_board_info spi_device_info = {
@@ -84,6 +98,19 @@ static int __init spi_init(void) {
 
     printk("LoRa SPI Driver\n");
     printk("SPI Busnummer: %i\n", SPI_LORA_BUS_NUM);
+
+    gpio_direction_input(DI0_PIN);
+    irqNumber = gpio_to_irq(DI0_PIN);
+
+    result = request_irq(irqNumber,             // The interrupt number requested
+                         (irq_handler_t) lora_irq_handler, // The pointer to the handler function below
+                         IRQF_TRIGGER_RISING,   // Interrupt on rising edge (button press, not release)
+                         "lora_irq_handler",    // Used in /proc/interrupts to identify the owner
+                         NULL);
+    if (result <= 0) {
+        printk("GPIO IRQ failed");
+        return -ENODEV;
+    }
 
 
     /*To send data we have to know what spi port/pins should be used. This information
@@ -137,12 +164,7 @@ static int __init spi_init(void) {
 
 
 static void __exit spi_exit(void) {
-    unsigned char ch = 0Xff;
-
-    if (spi_device) {
-        spi_write(spi_device, &ch, sizeof(ch));
-        spi_unregister_device(spi_device);
-    }
+    free_irq(irqNumber,NULL);
 }
 
 
