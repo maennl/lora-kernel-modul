@@ -1,5 +1,9 @@
 PWD := $(shell pwd)
-obj-m += lora.o
+TARGET = lora_module
+lora_module-objs := ./lora.o
+
+obj-m += $(TARGET).o
+
 
 all:
 	make ARCH=arm64 CROSS_COMPILE=$(CROSS) -C $(KERNEL) SUBDIRS=$(PWD) modules
