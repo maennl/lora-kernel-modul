@@ -1,0 +1,9 @@
+[Unit]
+Description=Männl Electronik LoRa Module
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/load_lora_module.sh
+
+[Install]
+WantedBy=multi-user.target
