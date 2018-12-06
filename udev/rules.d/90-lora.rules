@@ -1,0 +1,8 @@
+# Create the device file when the module is inserted.
+
+ SUBSYSTEM=="module", ACTION=="add", KERNEL=="lora_module", RUN+="/usr/sbin/mkloranode.sh"
+
+
+ # Remove the device file when the module is removed.
+
+ SUBSYSTEM=="module", ACTION=="remove", KERNEL=="lora_module", RUN+="/bin/rm /dev/rfm95w"

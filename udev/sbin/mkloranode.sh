@@ -1,6 +1,8 @@
 #!/bin/sh
 
-n=`cat /proc/devices | grep -c lora`
+DEV=rfm95w
+
+n=`cat /proc/devices | grep -c $DEV`
 
 if [ "X$n" = "X0" ]
 then
@@ -9,8 +11,10 @@ then
 fi
 
 
-major=`cat /proc/devices | grep lora | cut -d" " -f 1`
+major=`cat /proc/devices | grep $DEV | cut -d" " -f 1`
 
-mknod /dev/rfm95w -m 666 c $major 0
+mknod /dev/rfm95w -m 666 c $major 0 || true
+
+chmod 666 /dev/rfm95w
 
 exit 0
