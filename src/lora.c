@@ -237,9 +237,7 @@ static int _packetIndex = 0;
 static bool enableDebug = false;
 static int loglevel = 2;
 
-static int __init
-
-lora_init(void) {
+static int __init lora_init(void) {
     int result = 0;
 
     pr_info("LoRa SPI Kernel Driver by Männl Elektronik GmbH\n");
@@ -280,6 +278,7 @@ lora_init(void) {
 
     result = lora_spi_init();
     if (result < 0) {
+        pr_alert("SPI init fehlgeschlagen\n");
         device_destroy(lora_cdev_class, MKDEV(dev_major, 0));
         class_unregister(lora_cdev_class);
         class_destroy(lora_cdev_class);
@@ -289,6 +288,7 @@ lora_init(void) {
 
     result = lora_gpio_init();
     if (result < 0) {
+        pr_alert("GPIO init fehlgeschlagen\n");
         lora_free_spi_device();
         device_destroy(lora_cdev_class, MKDEV(dev_major, 0));
         class_unregister(lora_cdev_class);
@@ -309,6 +309,7 @@ lora_init(void) {
 
     result = lora_check_module();
     if (result < 0) {
+        pr_alert("Lora-Modul-Test fehlgeschlagen\n");
         lora_free_spi_device();
         device_destroy(lora_cdev_class, MKDEV(dev_major, 0));
         class_unregister(lora_cdev_class);
